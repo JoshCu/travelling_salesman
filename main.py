@@ -36,11 +36,51 @@ def nearest_neighbor(adjacency_matrix: np.ndarray) -> (int, np.ndarray):
     return total_weight, path
 
 
-def read_file(file_path: Path) -> np.ndarray:
+@njit
+def evaluate_path(adjacency_matrix, path):
+    weight = 0
+    for i in range(len(path) - 1):
+        weight += int(adjacency_matrix[path[i], path[i + 1]])
+    return weight
+
+
+@njit
+def heaps_algorithm(
+    n: int,
+    a: np.ndarray,
+    adjacency_matrix: np.ndarray,
+    best_path=np.array([]),
+    best_weight=np.iinfo(np.int32).max,
+):
+    if n == 1:
+        current_weight = evaluate_path(adjacency_matrix, a)
+        if current_weight < best_weight:
+            best_weight = current_weight
+            best_path = a.copy()  # Make a copy of the current path
+    else:
+        for i in range(n - 1):
+            best_path, best_weight = heaps_algorithm(
+                n - 1, a, adjacency_matrix, best_path, best_weight
+            )
+            if n % 2 == 0:
+                a[i], a[n - 1] = a[n - 1], a[i]
+            else:
+                a[0], a[n - 1] = a[n - 1], a[0]
+        best_path, best_weight = heaps_algorithm(
+            n - 1, a, adjacency_matrix, best_path, best_weight
+        )
+
+    return best_path, best_weight
+
+
+def read_file(file_path: Path, trim=0) -> np.ndarray:
     with open(file_path, "r") as file:
         data = file.readlines()
     # remove new line characters
     data = [line.strip() for line in data]
+
+    # trim the graph size
+    data = data[:trim]
 
     # create a new numpy array of zeros
     adjacency_matrix = np.zeros((len(data), len(data)), dtype=np.int32)
@@ -55,8 +95,17 @@ def read_file(file_path: Path) -> np.ndarray:
     return adjacency_matrix
 
 
-def main():
-    n = 100  # Example size, adjust as needed
+def bf():
+    n = 5  # Example size, adjust as needed
+    fn = float(n)
+    file = f"Size100.graph"
+    data = read_file(Path(file), 5)
+    best_path, best_weight = heaps_algorithm(n, np.arange(fn), data)
+    print(f"Path: {best_path} with total weight: {best_weight}")
+
+
+def nn():
+    n = 1000  # Example size, adjust as needed
     file = f"Size{n}.graph"
     data = read_file(Path(file))
     weight, path = nearest_neighbor(data)
@@ -64,4 +113,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    bf()
