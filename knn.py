@@ -24,7 +24,7 @@ def evaluate_solution(matrix, path):
     end_nodes = path[1:]
     return matrix[start_nodes, end_nodes].sum()
 
-def inertia(path = "Size1000.graph"):
+def inertia(path = "Size100.graph"):
     adj_matrix = load_file(path)
     # Use Multidimensional Scaling (MDS) to derive coordinates for nodes
     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
@@ -42,7 +42,7 @@ def inertia(path = "Size1000.graph"):
     plt.title('Elbow Method for Optimal k')
     plt.show()
 
-def kmeans(path = "Size1000.graph"):
+def kmeans(path = "Size100.graph"):
     adj_matrix = load_file(path)
     # Use Multidimensional Scaling (MDS) to derive coordinates for nodes
     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
@@ -62,7 +62,7 @@ def kmeans(path = "Size1000.graph"):
     #plt.show()
     return clusters
 
-def silouhettes(path = "Size1000.graph"):
+def silouhettes(path = "Size100.graph"):
     adj_matrix = load_file(path)
     # Use Multidimensional Scaling (MDS) to derive coordinates for nodes
     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
@@ -137,9 +137,9 @@ if __name__ == "__main__":
     #inertia()
     #kmeans()
     #silouhettes()
-    adj_matrix = load_file("Size1000.graph")
+    adj_matrix = load_file("Size100.graph")
     print(adj_matrix.max())
-    clusters = kmeans("Size1000.graph")
+    clusters = kmeans("Size100.graph")
     magic_constant = calculate_width(clusters, adj_matrix)
     print(magic_constant)
     overall_best_path = None

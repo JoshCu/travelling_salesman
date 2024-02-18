@@ -1,41 +1,19 @@
 import numpy as np
 import random
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from nn import nearest_neighbor
-
-def load_file(filename):
-    with open(filename, "r") as file:
-        file_content = [[int(weight) for weight in line.strip().split()] for line in file]
-
-    matrix = np.zeros((len(file_content), len(file_content)))
-    for i, row in enumerate(file_content):
-        for j, weight in enumerate(row[:-1]):
-            matrix[i, j] = weight
-    # mirror over the diagonal
-    matrix = np.maximum(matrix, matrix.T)
-    return matrix
-
-def evaluate_solution(matrix, path):
-    start_nodes = path[:-1]
-    end_nodes = path[1:]
-    return matrix[start_nodes, end_nodes].sum()
-
+from utils import load_file, evaluate_solution, parse_args
 class SA:
     def __init__(self, iterations, temp, adjacency_matrix, gamma, starting_path=None):
         self.iterations = iterations
         self.temp = temp
         self.adjacency_matrix = adjacency_matrix
         self.gamma = gamma
-        self.nodes = list(range(len(adjacency_matrix)))
         if starting_path is not None:
             self.starting_path = starting_path
         else:
-            self.starting_path = nearest_neighbor(adjacency_matrix)[0]
+            self.starting_path = random.shuffle(self.nodes)
 
-    def total_distance(self, path):
-        start_nodes = path[:-1]
-        end_nodes = path[1:]
-        return self.adjacency_matrix[start_nodes, end_nodes].sum()
 
     def check_accept(self, temp, new_solution, current_solution):
         delta = new_solution - current_solution
@@ -45,7 +23,7 @@ class SA:
     def cooling_temp(self, temp):
         return temp / (1 + self.gamma * temp)
 
-    def swap_elements(self, path):
+    def random_swap_elements(self, path):
         path_new = path.copy()
         i, j = random.sample(range(1, len(path_new) - 1), 2)
         path_new[i], path_new[j] = path_new[j], path_new[i]
@@ -53,15 +31,15 @@ class SA:
 
     def run(self):
         temp = self.temp
-        random.shuffle(self.nodes)
-        current_path = nearest_neighbor(self.adjacency_matrix)[0]
-        current_distance = self.total_distance(current_path)
+        
+        current_path = self.starting_path.copy()
+        current_distance = evaluate_solution(self.adjacency_matrix, current_path)
         best_path = current_path
         best_distance = current_distance
 
         for _ in range(self.iterations):
-            new_path = self.swap_elements(current_path)
-            new_distance = self.total_distance(new_path)
+            new_path = self.random_swap_elements(current_path)
+            new_distance = evaluate_solution(self.adjacency_matrix, new_path)
 
             if new_distance < best_distance:
                 best_path = new_path
@@ -89,27 +67,37 @@ def parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_pr
 
 
 
-adjacency_matrix = load_file("Size100.graph")
+def run_epochs(adjacency_matrix, s_path=None):
+    # SA parameters
+    # Run parallel SA
+    if s_path is None:
+        s_path = nearest_neighbor(adjacency_matrix)[0]
 
-# SA parameters
-iterations = 1000000
-temp = 1000
-gamma = 0.99
-epochs = 10
-num_processes = 20 
-starting_path = nearest_neighbor(adjacency_matrix)[0]
+    best_distance = float('inf')
+    best_path = None
+    epochs = 50
+    iterations = 100000
+    temp = 1000
+    gamma = 0.99
+    epochs = 50
+    num_processes = cpu_count()
+    for i in range(epochs):
+        starting_path = s_path
+        print(f"starting_path: {starting_path}")
+        results = parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_processes)
+        for result in results:
+            if result[1] < best_distance:
+                best_distance = result[1]
+                best_path = result[0]
+        print(f"Epoch {i}: Best distance: {best_distance}")
+        starting_path = best_path.copy()
 
-# Run parallel SA
-best_distance = float('inf')
-best_path = None
-for i in range(epochs):
-    results = parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_processes)
-    for result in results:
-        if result[1] < best_distance:
-            best_distance = result[1]
-            best_path = result[0]
-    print(f"Epoch {i}: Best distance: {best_distance}")
-    starting_path = best_path
+    print("Best distance:", best_distance)
 
-print("Best distance:", best_distance)
+if __name__ == "__main__":
+    file_path = parse_args()
+    matrix = load_file(file_path)
+    path, score = run_epochs(matrix)
+    print(f"Best path: {path}")
+    print(f"Score: {score}")
 
