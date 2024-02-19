@@ -34,6 +34,8 @@ def evaluate_solution(matrix: np.ndarray, path: list[int]) -> int:
     Returns:
         int: The total weight of the path.
     """
+    if path[0] != path[-1]:
+        path.append(path[0])
     start_nodes = path[:-1]
     end_nodes = path[1:]
     return matrix[start_nodes, end_nodes].sum()
