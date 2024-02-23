@@ -3,6 +3,7 @@ import random
 from multiprocessing import Pool, cpu_count
 from nn import nearest_neighbor
 from utils import load_file, evaluate_solution, parse_args
+from tqdm import tqdm
 class SA:
     def __init__(self, iterations, temp, adjacency_matrix, gamma, starting_path=None):
         self.iterations = iterations
@@ -81,18 +82,23 @@ def run_epochs(adjacency_matrix, s_path=None):
     gamma = 0.99
     epochs = 50
     num_processes = cpu_count()
-    for i in range(epochs):
-        starting_path = s_path
-        print(f"starting_path: {starting_path}")
+    distances_list = []
+    for i in tqdm(range(epochs)):
+        starting_path = s_path        
         results = parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_processes)
         for result in results:
             if result[1] < best_distance:
                 best_distance = result[1]
                 best_path = result[0]
+        print(f"best_path: {best_path}")
         print(f"Epoch {i}: Best distance: {best_distance}")
+        distances_list.append(best_distance)
         starting_path = best_path.copy()
+        if len(distances_list) > 3:
+            if sum(distances_list[-3:]) / 3 == best_distance:
+                break
 
-    print("Best distance:", best_distance)
+    return best_path, best_distance
 
 if __name__ == "__main__":
     file_path = parse_args()

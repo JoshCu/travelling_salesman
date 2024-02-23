@@ -3,6 +3,7 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
+from utils import load_file, evaluate_solution, parse_args
 
 # Example adjacency matrix (replace with your actual matrix)
 def load_file(filename):
@@ -137,9 +138,9 @@ if __name__ == "__main__":
     #inertia()
     #kmeans()
     #silouhettes()
-    adj_matrix = load_file("Size100.graph")
+    adj_matrix = load_file(parse_args())
     print(adj_matrix.max())
-    clusters = kmeans("Size100.graph")
+    clusters = kmeans(parse_args())
     magic_constant = calculate_width(clusters, adj_matrix)
     print(magic_constant)
     overall_best_path = None
