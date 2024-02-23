@@ -34,6 +34,9 @@ def evaluate_solution(matrix: np.ndarray, path: list[int]) -> int:
     Returns:
         int: The total weight of the path.
     """
+    if (type(path) is tuple):
+        path = list(path)
+    
     if path[0] != path[-1]:
         path.append(path[0])
     start_nodes = path[:-1]

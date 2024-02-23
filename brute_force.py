@@ -8,7 +8,7 @@ def brute_force(matrix):
     best_score = float("inf")
     for path in permutations(range(1, n)):
         npath = np.array([0] + list(path) + [0])
-        score = evaluate_solution(matrix, path)
+        score = evaluate_solution(matrix, npath)
         if score < best_score:
             best_score = score
             best_path = npath
@@ -20,5 +20,6 @@ if __name__ == "__main__":
     path, score = brute_force(matrix)
     print(f"Best path: {path}")
     print(f"Score: {score}")
+    print(f"score: {evaluate_solution(matrix, path)}")
 
 
