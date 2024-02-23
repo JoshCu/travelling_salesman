@@ -1,7 +1,9 @@
 import numpy as np
 import argparse
 from pathlib import Path
+from functools import lru_cache
 
+@lru_cache
 def load_file(filename: str) -> np.ndarray:
     """
     Load a file containing a matrix of weights and convert it into a numpy array.

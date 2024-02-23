@@ -4,17 +4,21 @@ from multiprocessing import Pool, cpu_count
 from nn import nearest_neighbor
 from utils import load_file, evaluate_solution, parse_args
 from tqdm import tqdm
+from functools import partial
 class SA:
-    def __init__(self, iterations, temp, adjacency_matrix, gamma, starting_path=None):
+    def __init__(self, iterations, temp, adjacency_matrix_path, gamma, starting_path=None):
         self.iterations = iterations
         self.temp = temp
-        self.adjacency_matrix = adjacency_matrix
+        self.adjacency_matrix_path = adjacency_matrix_path  
         self.gamma = gamma
         if starting_path is not None:
             self.starting_path = starting_path
         else:
             self.starting_path = random.shuffle(self.nodes)
 
+    @property
+    def adjacency_matrix(self):
+        return load_file(self.adjacency_matrix_path)
 
     def check_accept(self, temp, new_solution, current_solution):
         delta = new_solution - current_solution
@@ -54,21 +58,21 @@ class SA:
 
         return best_path, best_distance
 
-def run_sa(params):
+def run_sa(params, _):
     sa = SA(*params)
     return sa.run()
 
-def parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_processes):
+def parallel_sa(iterations, temp, adj_matrix_path, gamma, starting_path, num_processes):
+    partial_run_sa = partial(run_sa, (iterations, temp, adj_matrix_path, gamma, starting_path))
     pool = Pool(processes=num_processes)
-    params = [(iterations, temp, adjacency_matrix, gamma, starting_path) for _ in range(num_processes)]
-    results = pool.map(run_sa, params)
+    results = pool.map(partial_run_sa, range(num_processes))
     pool.close()
     pool.join()
     return results
 
 
 
-def run_epochs(adjacency_matrix, s_path=None):
+def run_epochs(adjacency_matrix, s_path=None, adj_matrix_path=None):
     # SA parameters
     # Run parallel SA
     if s_path is None:
@@ -85,7 +89,7 @@ def run_epochs(adjacency_matrix, s_path=None):
     distances_list = []
     for i in tqdm(range(epochs)):
         starting_path = s_path        
-        results = parallel_sa(iterations, temp, adjacency_matrix, gamma, starting_path, num_processes)
+        results = parallel_sa(iterations, temp, adj_matrix_path, gamma, starting_path, num_processes)
         for result in results:
             if result[1] < best_distance:
                 best_distance = result[1]
@@ -94,8 +98,8 @@ def run_epochs(adjacency_matrix, s_path=None):
         print(f"Epoch {i}: Best distance: {best_distance}")
         distances_list.append(best_distance)
         starting_path = best_path.copy()
-        if len(distances_list) > 3:
-            if sum(distances_list[-3:]) / 3 == best_distance:
+        if len(distances_list) > 5:
+            if sum(distances_list[-5:]) / 5 == best_distance:
                 break
 
     return best_path, best_distance
@@ -103,7 +107,7 @@ def run_epochs(adjacency_matrix, s_path=None):
 if __name__ == "__main__":
     file_path = parse_args()
     matrix = load_file(file_path)
-    path, score = run_epochs(matrix)
+    path, score = run_epochs(matrix, adj_matrix_path=file_path)
     print(f"Best path: {path}")
     print(f"Score: {score}")
 

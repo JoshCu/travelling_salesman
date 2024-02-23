@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.ma as ma
 from utils import load_file, evaluate_solution, parse_args
-
+from tqdm import tqdm
 def nearest_neighbor(matrix):
     # get the number of nodes
     n = matrix.shape[0]
@@ -10,7 +10,7 @@ def nearest_neighbor(matrix):
     # keep track of visited nodes to avoid cycles
     visited = set([0])
     # iterate over the number of nodes
-    for _ in range(n - 1):
+    for _ in tqdm(range(n - 1)):
         # get the current node
         current = path[-1]
         best_next = None
